@@ -4,11 +4,13 @@
 <script type="text/javascript">
   $(document).ready(function(){
     $("#jquery_jplayer_1").jPlayer({
+      // events
       ready: function (event) {
         $(this).jPlayer("setMedia", {
           mp3:"http://127.0.0.1/01 Battery.mp3",
         });
       },
+      ended: next_song,
       swfPath: "http://127.0.0.1:5000/static/js",
       supplied: "mp3",
       wmode: "window"
@@ -16,14 +18,9 @@
   });
 </script>
 <style>
-.jp-seek-bar {
-  background-color: #FFFFFF;
+.jp-seek-bar, .jp-play-bar {
   height: 10px;
-}
-
-.jp-play-bar {
-  background-color: #FF0000;
-  height: 10px;
+  margin-bottom: 10px;
 }
 
 .btn-player {
@@ -32,6 +29,19 @@
 
 .jp-duration {
   margin-right: 10px;
+}
+
+.jp-volume-bar, .jp-volume-bar-value {
+  height: 10px;
+  margin-bottom: 10px;
+}
+
+ul.nav .btn {
+  margin-top: 10px;
+}
+
+.no-select {
+  user-select: none;
 }
 </style>
 {% endblock %}
@@ -43,20 +53,43 @@
       <a class="brand" href="#">Webaudio</a>
       <ul class="nav" id="myTab">
         <li><a data-toggle="tab" href="#home">Home</a></li>
-        <li><a data-toggle="tab" href="#search">Search</a></li>
+        <li><a data-toggle="tab" href="#library">Library</a></li>
+        <li><a data-toggle="tab" href="#playlists">Playlists</a></li>
       </ul>
 
       <!-- JPlayer -->
       <!--<div id="jp_container_1" class="nav">-->
         <ul id="jp_container_1" class="nav">
-          <li><button class="btn btn-player jp-play" href="javascript:;"><i class="icon-play"></i></button></li>
-          <li><button class="btn btn-player jp-pause" href="javascript:;"><i class="icon-pause"></i></button></li>
+          <li><button class="btn btn-mini btn-player jp-play" href="javascript:;"><i class="icon-play"></i></button></li>
+          <li><button class="btn btn-mini btn-player jp-pause" href="javascript:;"><i class="icon-pause"></i></button></li>
 
           <li><p class="navbar-text jp-current-time"></p></li>
-          <li style="width: 150px;"><a href="#"><span class="jp-seek-bar navbar-search" style="width: 100%;"><div class="jp-play-bar"></div></span></a></li>
+          
+          <li style="width: 150px;">
+            <a href="#">
+              <span class="jp-seek-bar navbar-search progress" style="width: 100%;">
+                <div class="jp-play-bar bar"></div>
+              </span>
+            </a>
+          </li>
+          
           <li><p class="navbar-text jp-duration"></p></li>
-          <li><button class="btn btn-player jp-mute" href="javascript:;"><i class="icon-volume-off"></i></button></li>
-          <li><button class="btn btn-player jp-unmute" href="javascript:;"><i class="icon-volume-up"></i></button></li>
+          <li><button class="btn btn-mini btn-player jp-mute" href="javascript:;"><i class="icon-volume-off"></i></button></li>
+          <li><button class="btn btn-mini btn-player jp-unmute" href="javascript:;"><i class="icon-volume-up"></i></button></li>
+          <li><button class="btn btn-mini btn-player jp-previous" href="javascript:;"><i class="icon-step-backward"></i></button></li>
+          <li><button class="btn btn-mini btn-player jp-next" href="javascript:;"><i class="icon-step-forward"></i></button></li>
+          <li><button class="btn btn-mini btn-player" data-toggle="button" href="javascript:playlist.random = !playlist.random"><i class="icon-random"></i></button></li>
+          
+          <li><p class="navbar-text"><i class="icon-volume-up icon-white"></i></p></li>
+          <li style="width: 150px;">
+            <a href="#">
+              <span class="jp-volume-bar navbar-search progress" style="width: 100%">
+                <div class="jp-volume-bar-value bar"></div>
+              </span>
+            </a>
+          </li>
+          <li><p id="track_name" class="navbar-text"></p></li>
+
         </ul>
       <!--</div>-->
       
@@ -66,7 +99,54 @@
 <div class="container">
   <div id="myTabContent" class="tab-content">
     <div id="home" class="tab-pane active">
-      <table id="playlist" class="table table-hover table-condensed">
+
+      <!-- Modal -->
+      <div id="saveModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+          <h3 id="saveModalLabel">Save playlist as ...</h3>
+        </div>
+      <div class="modal-body">
+        <p>Save playlist as:</p>
+        <input id="playlist_save_name" type="text" placeholder="name" name="name"/>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        <button class="btn btn-primary" onClick="javascript:save_playlist(false)">Save changes</button>
+        </div>
+      </div>
+
+      <div id="overwriteModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="overwriteLabel" aria-hidden="true">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+          <h3 id="overwriteLabel">Overwrite playlist</h3>
+        </div>
+      <div class="modal-body">
+        <p>A playlist with the name <span id="overwrite_name"></span> already exists. Do you want to overwrite it?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">No</button>
+        <button class="btn btn-danger" onClick="javascript:save_playlist(true)">Yes</button>
+        </div>
+      </div>
+
+      <div id="successModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="successLabel" aria-hidden="true">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+          <h3 id="successLabel">Success</h3>
+        </div>
+      <div class="modal-body">
+        <p>Succesfully saved playlist!</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        </div>
+      </div>
+
+      <h2>Current Playlist</h2>
+      <a role="button" class="btn btn-mini btn-primary" href="#saveModal" data-toggle="modal">Save</a>
+      <a role="button" class="btn btn-mini btn-danger" href="javascript:clear_playlist();">Clear</a>
+      <table id="playlist" class="table table-hover table-condensed table-striped no-select" style="cursor: pointer;">
         <thead>
           <tr>
             <th>#</th>
@@ -81,11 +161,54 @@
         $(document).ready(function()
           {
             fetch_current_playlist();
+            fetch_artists();
+            fetch_playlists();
           });
       </script>
     </div>
-    <div id="search" class="tab-pane">
-    
+    <div id="library" class="tab-pane">
+      <div class="row">
+        <div class="span4">
+          <h2>Artists</h2>
+          <table id="3p-artist" class="table table-condensed table-hover table-striped" style="cursor: pointer;">
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+        <div class="span4 pull-right">
+          <h2>Songs</h2>
+          <table id="3p-song" class="table table-condensed table-hover table-striped"  style="cursor: pointer;">
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="span4">
+          <h2>Albums</h2>
+          <table id="3p-album" class="table table-condensed table-hover table-striped" style="cursor: pointer;">
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="playlists" class="tab-pane">
+      <div class="row">
+        <div class="span4">
+          <h2>Playlists</h2>
+          <table id="2p-playlist" class="table table-condensed table-hover table-striped" style="cursor: pointer;">
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+        <div class="span8 pull-right">
+          <h2>Songs</h2>
+          <table id="2p-song" class="table table-condensed table-hover table-striped" style="cursor: pointer;">
+            <tbody>
+            </tbody>
+          </table>
+        </div>
     </div>
   </div>
 </div>

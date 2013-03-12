@@ -4,10 +4,18 @@ create table artist (
   name string not null
 );
 
+drop table if exists album;
+create table album (
+  id integer primary key autoincrement,
+  artist_id integer,
+  name string not null
+);
+
 drop table if exists song;
 create table song (
   id integer primary key autoincrement,
   artist_id integer,
+  album_id integer,
   name string not null,
   path string not null,
   last_update integer
