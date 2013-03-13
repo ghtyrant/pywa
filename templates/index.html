@@ -43,6 +43,10 @@ ul.nav .btn {
 .no-select {
   user-select: none;
 }
+
+.ui-effects-transfer {
+  border: 2px dotted gray;
+}
 </style>
 {% endblock %}
 
@@ -53,8 +57,8 @@ ul.nav .btn {
       <a class="brand" href="#">Webaudio</a>
       <ul class="nav" id="myTab">
         <li><a data-toggle="tab" href="#home">Home</a></li>
-        <li><a data-toggle="tab" href="#library">Library</a></li>
-        <li><a data-toggle="tab" href="#playlists">Playlists</a></li>
+        <li><a data-toggle="tab" href="#library" onClick="javascript:fetch_artists()">Library</a></li>
+        <li><a data-toggle="tab" href="#playlists" onClick="javascript:fetch_playlists()">Playlists</a></li>
       </ul>
 
       <!-- JPlayer -->
@@ -76,9 +80,9 @@ ul.nav .btn {
           <li><p class="navbar-text jp-duration"></p></li>
           <li><button class="btn btn-mini btn-player jp-mute" href="javascript:;"><i class="icon-volume-off"></i></button></li>
           <li><button class="btn btn-mini btn-player jp-unmute" href="javascript:;"><i class="icon-volume-up"></i></button></li>
-          <li><button class="btn btn-mini btn-player jp-previous" href="javascript:;"><i class="icon-step-backward"></i></button></li>
-          <li><button class="btn btn-mini btn-player jp-next" href="javascript:;"><i class="icon-step-forward"></i></button></li>
-          <li><button class="btn btn-mini btn-player" data-toggle="button" href="javascript:playlist.random = !playlist.random"><i class="icon-random"></i></button></li>
+          <li><button class="btn btn-mini btn-player" onClick="javascript:previous_song()"><i class="icon-step-backward"></i></button></li>
+          <li><button class="btn btn-mini btn-player" onClick="javascript:next_song()"><i class="icon-step-forward"></i></button></li>
+          <li><button class="btn btn-mini btn-player" data-toggle="button" onClick="javascript:playlist.random = !playlist.random"><i class="icon-random"></i></button></li>
           
           <li><p class="navbar-text"><i class="icon-volume-up icon-white"></i></p></li>
           <li style="width: 150px;">
@@ -143,7 +147,7 @@ ul.nav .btn {
         </div>
       </div>
 
-      <h2>Current Playlist</h2>
+      <h2>Now playing</h2>
       <a role="button" class="btn btn-mini btn-primary" href="#saveModal" data-toggle="modal">Save</a>
       <a role="button" class="btn btn-mini btn-danger" href="javascript:clear_playlist();">Clear</a>
       <table id="playlist" class="table table-hover table-condensed table-striped no-select" style="cursor: pointer;">
@@ -152,6 +156,8 @@ ul.nav .btn {
             <th>#</th>
             <th>Title</th>
             <th>Artist</th>
+            <th>Queue</th>
+            <th>Remove</th>
           </tr>
         </thead>
         <tbody>
@@ -164,10 +170,26 @@ ul.nav .btn {
             fetch_artists();
             fetch_playlists();
           });
-      </script>
+        </script>
     </div>
     <div id="library" class="tab-pane">
+      
+      <div id="updateModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="updateLabel" aria-hidden="true">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+          <h3 id="updateLabel">Update finished</h3>
+        </div>
+      <div class="modal-body">
+        <p>Updated library!</p>
+        <p><b id="update_new"></b> new songs, <b id="update_updated"></b> updated songs.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        </div>
+      </div>
+
       <div class="row">
+        <a role="button" class="btn btn-mini btn-primary" href="javascript:update_library();">Update database</a>
         <div class="span4">
           <h2>Artists</h2>
           <table id="3p-artist" class="table table-condensed table-hover table-striped" style="cursor: pointer;">
@@ -194,6 +216,19 @@ ul.nav .btn {
     </div>
 
     <div id="playlists" class="tab-pane">
+      <div id="deleteModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="deleteLabel" aria-hidden="true">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+          <h3 id="deleteLabel">Delete playlist</h3>
+        </div>
+      <div class="modal-body">
+        <p>Do you really want to delete playlist '<span id="delete_playlist_name"></span>'?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">No</button>
+        <button id="delete_playlist_button" class="btn btn-danger" onClick="javascript:delete_playlist(); $(\"#deleteModal\").modal(\"hide\")">Yes</button>
+        </div>
+      </div>
       <div class="row">
         <div class="span4">
           <h2>Playlists</h2>

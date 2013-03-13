@@ -15,7 +15,7 @@ SECRET_KEY = "12345"
 USERNAME = "admin"
 PASSWORD = "default"
 MUSIC_DIR = u"/srv/http/music"
-MUSIC_ADDRESS = "http://localhost/music/"
+APP_NAME = u"pywa"
 
 app = Flask(__name__)
 app.config.from_object(__name__)
@@ -151,6 +151,17 @@ def get_playlists():
   cur = g.db.execute(u"select id,name from playlist")
   return json.dumps([dict(id=row[0], name=row[1]) for row in cur.fetchall()])
 
+@app.route("/delete-playlist")
+def delete_playlist():
+  id = request.args.get('playlist_id')
+  print(id)
+
+  g.db.execute(u"delete from playlist_songs where playlist_id=?", [id]);
+  g.db.execute(u"delete from playlist where id=?", [id]);
+  g.db.commit()
+
+  return json.dumps({'error': 'success'})
+
 @app.route("/save-playlist", methods=["POST"])
 def save_playlist():
   name = request.form.get('name', '')
@@ -193,7 +204,8 @@ def get_songs():
     cur = g.db.execute(u"select s.id, s.name, a.name as artist, s.path from song as s inner join artist as a on a.id=s.artist_id where s.artist_id=?", [artist_id])
   elif playlist_id:
     cur = g.db.execute(u"select s.id, s.name, a.name as artist, s.path from playlist as p inner join playlist_songs as ps on p.id=ps.playlist_id inner join song as s on s.id=ps.song_id inner join artist as a on a.id=s.artist_id where p.id=?", [playlist_id])
-
+  else:
+    return json.dumps({"error": "no id specified"});
 
   return json.dumps([dict(id=row[0], name=row[1], artist=row[2], path=row[3]) for row in cur.fetchall()])
 
