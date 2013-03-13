@@ -6,9 +6,10 @@ It's in a very early stage and has not been tested with huge libraries.
 
 Screenshots
 ===========
-http://skyr.at/pywa/main.png - The main playlist, containing a few songs, some of the are queued.
-http://skyr.at/pywa/library.png - The three-pane library view.
-http://skyr.at/pywa/playlists.png - Playlist management. Currently only allows viewing and deleting them.
+
+* http://skyr.at/pywa/main.png - The main playlist, containing a few songs, some of the are queued.
+* http://skyr.at/pywa/library.png - The three-pane library view.
+* http://skyr.at/pywa/playlists.png - Playlist management. Currently only allows viewing and deleting them.
 
 Features
 ========
