@@ -22,6 +22,15 @@ Not too many, at the moment:
 * Saving & deleting playlists (playlists get saved on the server)
 * Manage playback by queueing songs (player will return to random/normal mode after playing the queue)
 
+Requirements
+============
+
+* Python (2.7, may work on other versions)
+* flask (0.9, +dependencies like jinja2)
+* pysqlite (2.6.3)
+* simplejson
+* eyed3
+
 What sucks
 ==========
 Code is far from being clean. This is my first Flask project and I hardly every use JavaScript, so expect a bit of a mess.
